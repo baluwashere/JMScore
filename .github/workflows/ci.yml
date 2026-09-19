@@ -32,6 +32,9 @@ jobs:
       - name: Collector unit tests
         run: npm --workspace @jmscore/collector run test
 
+      - name: Feature engine unit tests
+        run: npm --workspace @jmscore/features run test
+
   collector-live-smoke:
     needs: test
     runs-on: ubuntu-latest
