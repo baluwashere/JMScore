@@ -1,0 +1,36 @@
+name: Conditional Momentum 2023
+
+on:
+  push:
+    branches:
+      - feat/t4b-conditional-2023
+    paths:
+      - 'research/momentum_v1_2023/**'
+      - '.github/workflows/conditional-momentum-2023.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  conditional-momentum-2023:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Run preregistered 2023 conditional momentum search
+        run: python research/momentum_v1_2023/search.py
+
+      - name: Upload research results
+        uses: actions/upload-artifact@v4
+        with:
+          name: conditional-momentum-v1-2023
+          path: research/momentum_v1_2023/results/
+          retention-days: 30
