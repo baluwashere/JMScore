@@ -1,0 +1,29 @@
+{
+  "name": "jmscore",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "apps/*",
+    "packages/*",
+    "services/*"
+  ],
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate",
+    "db:push": "drizzle-kit push",
+    "db:smoke": "tsx scripts/db-smoke.ts"
+  },
+  "dependencies": {
+    "@libsql/client": "latest",
+    "dotenv": "latest",
+    "drizzle-orm": "rc",
+    "zod": "latest"
+  },
+  "devDependencies": {
+    "@types/node": "latest",
+    "drizzle-kit": "rc",
+    "tsx": "latest",
+    "typescript": "latest"
+  }
+}
