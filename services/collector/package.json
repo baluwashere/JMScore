@@ -5,8 +5,9 @@
   "scripts": {
     "start": "tsx src/index.ts",
     "smoke": "tsx src/smoke.ts",
+    "replay": "tsx src/replay/cli.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test": "tsx --test src/*.test.ts"
+    "test": "tsx --test src/*.test.ts src/state/*.test.ts src/replay/*.test.ts"
   },
   "dependencies": {
     "ws": "latest",
