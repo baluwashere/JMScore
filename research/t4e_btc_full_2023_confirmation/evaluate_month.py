@@ -8,7 +8,7 @@ import math
 import pickle
 import statistics
 import sys
-from datetime import date
+from datetime import date, datetime, timezone
 from pathlib import Path
 
 import numpy as np
@@ -68,7 +68,7 @@ def select_trades(ds: t4d.Dataset, p_long: np.ndarray, p_short: np.ndarray) -> l
         net = float(ds.long_net[i] if side == 1 else ds.short_net[i])
         out.append({
             "ts": ts,
-            "day": date.fromtimestamp(ts / 1000).isoformat(),
+            "day": datetime.fromtimestamp(ts / 1000, tz=timezone.utc).date().isoformat(),
             "side": "LONG" if side == 1 else "SHORT",
             "p_long": float(p_long[i]),
             "p_short": float(p_short[i]),
@@ -79,7 +79,7 @@ def select_trades(ds: t4d.Dataset, p_long: np.ndarray, p_short: np.ndarray) -> l
     return out
 
 
-def evaluate_day(day: date, models: dict) -> tuple[dict, list[dict]]:
+def evaluate_day(day: date, models: dict):
     ds, qas = t4d.build_dataset((day,))
     if len(ds.ts) == 0:
         raise RuntimeError(f"no usable rows for {day.isoformat()}")
@@ -97,7 +97,7 @@ def evaluate_day(day: date, models: dict) -> tuple[dict, list[dict]]:
         "long_strategy": metric([t for t in trades if t["side"] == "LONG"]),
         "short_strategy": metric([t for t in trades if t["side"] == "SHORT"]),
     })
-    return qa, trades
+    return qa, trades, y_long, p_long, y_short, p_short
 
 
 def main() -> None:
@@ -122,15 +122,29 @@ def main() -> None:
     all_qa: list[dict] = []
     all_trades: list[dict] = []
     unavailable: list[dict] = []
+    yl: list[np.ndarray] = []
+    pl: list[np.ndarray] = []
+    ys: list[np.ndarray] = []
+    ps: list[np.ndarray] = []
     for day in days:
         try:
-            qa, trades = evaluate_day(day, bundle["models"])
+            qa, trades, y_long, p_long, y_short, p_short = evaluate_day(day, bundle["models"])
             all_qa.append(qa)
             all_trades.extend(trades)
+            yl.append(y_long); pl.append(p_long); ys.append(y_short); ps.append(p_short)
             print(json.dumps({"event": "confirm_day_done", "day": day.isoformat(), "rows": qa["rows"], "trades": len(trades)}), flush=True)
         except Exception as exc:
             unavailable.append({"day": day.isoformat(), "error": str(exc)})
             print(json.dumps({"event": "confirm_day_unavailable", "day": day.isoformat(), "error": str(exc)}), flush=True)
+
+    predictive = None
+    if yl:
+        y_long_all = np.concatenate(yl); p_long_all = np.concatenate(pl)
+        y_short_all = np.concatenate(ys); p_short_all = np.concatenate(ps)
+        predictive = {
+            "long": t4d.binary_metrics(y_long_all, p_long_all),
+            "short": t4d.binary_metrics(y_short_all, p_short_all),
+        }
 
     result = {
         "month": args.month,
@@ -138,6 +152,7 @@ def main() -> None:
         "evaluated_days": [q["day"] for q in all_qa],
         "unavailable_days": unavailable,
         "qa": all_qa,
+        "predictive": predictive,
         "trades": all_trades,
         "strategy": metric(all_trades),
         "long_strategy": metric([t for t in all_trades if t["side"] == "LONG"]),
@@ -148,7 +163,7 @@ def main() -> None:
     out.mkdir(parents=True, exist_ok=True)
     path = out / f"month_{args.month:02d}.json"
     path.write_text(json.dumps(result, indent=2), encoding="utf-8")
-    print(json.dumps({"event": "month_done", "month": args.month, "strategy": result["strategy"], "unavailable": len(unavailable)}), flush=True)
+    print(json.dumps({"event": "month_done", "month": args.month, "strategy": result["strategy"], "predictive": predictive, "unavailable": len(unavailable)}), flush=True)
 
 
 if __name__ == "__main__":
