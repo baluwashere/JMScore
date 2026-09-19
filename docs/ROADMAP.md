@@ -4,15 +4,15 @@ The order is intentionally strict. Do not skip from research infrastructure to l
 
 ## T1 — Database and experiment foundation
 
-Status: scaffolded; requires a real Turso database/token to generate/apply the first migration and run a connection smoke test.
+Status: scaffolded; Turso database exists, but schema application and connection smoke test are still pending.
 
 - [x] TypeScript strict workspace
 - [x] Turso/libSQL client
 - [x] Drizzle configuration
 - [x] research schema
 - [x] experiment version fields
-- [ ] create Turso database
-- [ ] generate migration
+- [x] create Turso database
+- [x] generate initial migration
 - [ ] apply migration
 - [ ] insert/read smoke test
 
@@ -20,15 +20,20 @@ Acceptance: a test experiment and feature snapshot can be inserted and read from
 
 ## T2 — BTC market collector
 
-- [ ] define exchange adapter interface
-- [ ] choose first public BTC perpetual feed
-- [ ] websocket reconnect/backoff
-- [ ] trade stream
-- [ ] order-book stream
-- [ ] mark/funding/open-interest sources where available
-- [ ] data freshness monitoring
+Status: complete and live-smoke validated in GitHub Actions.
 
-Acceptance: collector survives disconnects and continuously maintains valid BTC market state.
+- [x] define exchange adapter interface
+- [x] choose first public BTC perpetual feed
+- [x] websocket reconnect/backoff
+- [x] trade stream
+- [x] order-book stream
+- [x] mark/funding/open-interest sources where available
+- [x] data freshness monitoring
+- [x] live smoke test for all four core WebSocket feeds
+
+Implementation note: Binance open interest remains an optional/degraded feed because the REST endpoint can return HTTP 451 from restricted hosting regions. This does not invalidate the core market-state collector; OI remains nullable and explicitly reported as stale when unavailable.
+
+Acceptance: collector survives disconnects, exposes per-feed freshness, and receives live BTC aggregate trades, order-book depth, best bid/ask and mark/funding data.
 
 ## T3 — Rolling market state
 
