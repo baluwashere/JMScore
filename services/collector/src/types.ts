@@ -86,6 +86,7 @@ export interface CollectorHealth {
   marketSocketConnected: boolean;
   feeds: Record<FeedName, FeedFreshness>;
   lastError: string | null;
+  recentErrors: string[];
 }
 
 export type EventListener = (event: MarketDataEvent) => void;
