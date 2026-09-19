@@ -44,15 +44,12 @@ export interface BinanceUsdmUrls {
 export function buildBinanceUsdmUrls(symbol: string): BinanceUsdmUrls {
   const upper = symbol.toUpperCase();
   const lower = symbol.toLowerCase();
-  const publicStreams = [
-    `${lower}@aggTrade`,
-    `${lower}@depth20@100ms`,
-    `${lower}@bookTicker`,
-  ].join('/');
+  const publicStreams = [`${lower}@depth20@100ms`, `${lower}@bookTicker`].join('/');
+  const marketStreams = [`${lower}@aggTrade`, `${lower}@markPrice@1s`].join('/');
 
   return {
     publicUrl: `wss://fstream.binance.com/public/stream?streams=${publicStreams}`,
-    marketUrl: `wss://fstream.binance.com/market/stream?streams=${lower}@markPrice@1s`,
+    marketUrl: `wss://fstream.binance.com/market/stream?streams=${marketStreams}`,
     openInterestUrl: `https://fapi.binance.com/fapi/v1/openInterest?symbol=${upper}`,
   };
 }
@@ -144,24 +141,6 @@ export class BinanceUsdmAdapter implements MarketDataAdapter {
       const parsed = combinedEnvelopeSchema.parse(JSON.parse(payload));
       const receivedAt = Date.now();
 
-      if (parsed.stream.endsWith('@aggTrade')) {
-        const data = aggTradeSchema.parse(parsed.data);
-        if (!this.isUsdm(data.st)) return;
-        this.emitEvent({
-          type: 'trade',
-          source: SOURCE,
-          symbol: data.s,
-          eventTime: data.E,
-          transactionTime: data.T,
-          receivedAt,
-          aggregateTradeId: data.a,
-          price: Number(data.p),
-          quantity: Number(data.q),
-          aggressorSide: data.m ? 'sell' : 'buy',
-        });
-        return;
-      }
-
       if (parsed.stream.includes('@depth20@')) {
         const data = partialDepthSchema.parse(parsed.data);
         if (!this.isUsdm(data.st)) return;
@@ -206,24 +185,44 @@ export class BinanceUsdmAdapter implements MarketDataAdapter {
   private handleMarketMessage(payload: string): void {
     try {
       const parsed = combinedEnvelopeSchema.parse(JSON.parse(payload));
-      if (!parsed.stream.includes('@markPrice')) return;
+      const receivedAt = Date.now();
 
-      const data = markPriceSchema.parse(parsed.data);
-      if (!this.isUsdm(data.st)) return;
-      const event: MarketDataEvent = {
-        type: 'mark_price',
-        source: SOURCE,
-        symbol: data.s,
-        eventTime: data.E,
-        receivedAt: Date.now(),
-        markPrice: Number(data.p),
-        indexPrice: Number(data.i),
-        fundingRate: Number(data.r),
-        nextFundingTime: data.T,
-        ...(data.P !== undefined ? { estimatedSettlePrice: Number(data.P) } : {}),
-        ...(data.ap !== undefined ? { movingAveragePrice: Number(data.ap) } : {}),
-      };
-      this.emitEvent(event);
+      if (parsed.stream.endsWith('@aggTrade')) {
+        const data = aggTradeSchema.parse(parsed.data);
+        if (!this.isUsdm(data.st)) return;
+        this.emitEvent({
+          type: 'trade',
+          source: SOURCE,
+          symbol: data.s,
+          eventTime: data.E,
+          transactionTime: data.T,
+          receivedAt,
+          aggregateTradeId: data.a,
+          price: Number(data.p),
+          quantity: Number(data.q),
+          aggressorSide: data.m ? 'sell' : 'buy',
+        });
+        return;
+      }
+
+      if (parsed.stream.includes('@markPrice')) {
+        const data = markPriceSchema.parse(parsed.data);
+        if (!this.isUsdm(data.st)) return;
+        const event: MarketDataEvent = {
+          type: 'mark_price',
+          source: SOURCE,
+          symbol: data.s,
+          eventTime: data.E,
+          receivedAt,
+          markPrice: Number(data.p),
+          indexPrice: Number(data.i),
+          fundingRate: Number(data.r),
+          nextFundingTime: data.T,
+          ...(data.P !== undefined ? { estimatedSettlePrice: Number(data.P) } : {}),
+          ...(data.ap !== undefined ? { movingAveragePrice: Number(data.ap) } : {}),
+        };
+        this.emitEvent(event);
+      }
     } catch (error) {
       this.recordError(`market payload rejected: ${this.errorMessage(error)}`);
     }
