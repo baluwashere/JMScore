@@ -4,8 +4,9 @@
   "type": "module",
   "scripts": {
     "start": "tsx src/index.ts",
+    "smoke": "tsx src/smoke.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test": "tsx --test src/**/*.test.ts"
+    "test": "tsx --test src/*.test.ts"
   },
   "dependencies": {
     "ws": "latest",
