@@ -37,6 +37,8 @@ Acceptance: collector survives disconnects, exposes per-feed freshness, and rece
 
 ## T3 — Rolling market state + historical replay
 
+Status: complete; typecheck, state/replay tests and live collector smoke validated in GitHub Actions.
+
 - [x] bounded trade buffers
 - [x] local top-20 order-book state
 - [x] stale-data detection
@@ -47,7 +49,7 @@ Acceptance: collector survives disconnects, exposes per-feed freshness, and rece
 - [x] chronological multi-feed merge
 - [x] replay capability mask so unavailable historical features are never fabricated
 - [x] replay CLI for decompressed Binance Vision CSV files
-- [ ] validate latest T3 head with live collector smoke test
+- [x] validate latest T3 implementation with live collector smoke test
 
 Historical-data rule: exact historical L1/BBO and trade replay is supported. Binance Vision `bookDepth` is not treated as equivalent to live top-20 depth because the historical product is aggregated/sampled differently. L5/L20 features therefore require forward-collected data or a separate high-fidelity L2 source.
 
