@@ -19,6 +19,7 @@ import type {
 } from './types.js';
 
 const SOURCE = 'binance-usdm' as const;
+const MAX_RECENT_ERRORS = 20;
 
 const freshnessThresholds: Record<FeedName, number> = {
   trade: 10_000,
@@ -64,6 +65,7 @@ export class BinanceUsdmAdapter implements MarketDataAdapter {
   private readonly eventListeners = new Set<EventListener>();
   private readonly healthListeners = new Set<HealthListener>();
   private readonly lastReceivedAt = new Map<FeedName, number>();
+  private readonly recentErrors: string[] = [];
 
   private publicSocket: ManagedWebSocket | null = null;
   private marketSocket: ManagedWebSocket | null = null;
@@ -284,6 +286,7 @@ export class BinanceUsdmAdapter implements MarketDataAdapter {
       marketSocketConnected: this.marketSocketConnected,
       feeds,
       lastError: this.lastError,
+      recentErrors: [...this.recentErrors],
     };
 
     for (const listener of this.healthListeners) listener(health);
@@ -300,6 +303,10 @@ export class BinanceUsdmAdapter implements MarketDataAdapter {
 
   private recordError(message: string): void {
     this.lastError = message;
+    this.recentErrors.push(message);
+    if (this.recentErrors.length > MAX_RECENT_ERRORS) {
+      this.recentErrors.splice(0, this.recentErrors.length - MAX_RECENT_ERRORS);
+    }
   }
 
   private isUsdm(symbolType: number | undefined): boolean {
