@@ -1,0 +1,78 @@
+name: T4E BTC Full 2023 Confirmation
+
+on:
+  push:
+    branches:
+      - feat/t4e-btc-full-2023-confirmation
+    paths:
+      - 'research/t4e_btc_full_2023_confirmation/**'
+      - 'research/t4d_btc_rare_move_jev/run.py'
+      - '.github/workflows/t4e-btc-full-2023-confirmation.yml'
+  workflow_dispatch:
+
+jobs:
+  prepare-model:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install research dependencies
+        run: python -m pip install --disable-pip-version-check numpy==2.5.3 scikit-learn==1.9.1
+      - name: Train frozen T4D HGB >8 bps model
+        run: python research/t4e_btc_full_2023_confirmation/prepare_model.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: t4e-frozen-model
+          path: research/t4e_btc_full_2023_confirmation/model/
+          retention-days: 30
+
+  evaluate-month:
+    needs: prepare-model
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        month: [6, 7, 8, 9, 10, 11, 12]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install research dependencies
+        run: python -m pip install --disable-pip-version-check numpy==2.5.3 scikit-learn==1.9.1
+      - uses: actions/download-artifact@v4
+        with:
+          name: t4e-frozen-model
+          path: research/t4e_btc_full_2023_confirmation/model/
+      - name: Evaluate frozen model on unused month days
+        run: python research/t4e_btc_full_2023_confirmation/evaluate_month.py --month ${{ matrix.month }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: t4e-month-${{ matrix.month }}
+          path: research/t4e_btc_full_2023_confirmation/results/month_*.json
+          retention-days: 30
+
+  aggregate:
+    needs: evaluate-month
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: t4e-month-*
+          path: research/t4e_btc_full_2023_confirmation/results/
+          merge-multiple: true
+      - name: Aggregate preregistered confirmation
+        run: python research/t4e_btc_full_2023_confirmation/aggregate.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: t4e-btc-confirmation-2023
+          path: |
+            research/t4e_btc_full_2023_confirmation/results/confirmation.json
+            research/t4e_btc_full_2023_confirmation/results/confirmation.md
+          retention-days: 30
