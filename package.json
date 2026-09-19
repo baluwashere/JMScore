@@ -16,6 +16,7 @@
   },
   "dependencies": {
     "@libsql/client": "latest",
+    "ai": "7.0.105",
     "dotenv": "latest",
     "drizzle-orm": "rc",
     "zod": "latest"
