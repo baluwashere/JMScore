@@ -1,0 +1,50 @@
+{
+  "decision": "NO_GO_PILOT",
+  "scope": "BTCUSDT USD-M 2023 sampled-day microstructure pilot",
+  "raw_data": {
+    "agg_trade_rows": 25030092,
+    "book_ticker_rows": 327195005,
+    "agg_zip_bytes": 328396640,
+    "book_zip_bytes": 3722932710,
+    "candidate_snapshots": 79800,
+    "usable_snapshots": 79176,
+    "usable_fraction": 0.9921804511,
+    "crossed_quotes_accepted": 0
+  },
+  "dataset": {
+    "train_rows": 22797,
+    "calibration_rows": 11400,
+    "holdout_rows": 44979,
+    "feature_count": 23
+  },
+  "models": {
+    "logistic_regression": {
+      "threshold": 0.52,
+      "train_auc": 0.5508794711,
+      "calibration_auc": 0.5307453480,
+      "holdout_auc": 0.5252584325,
+      "holdout_trades": 3870,
+      "holdout_gross_mean_bps": 0.4170687970,
+      "holdout_net8_mean_bps": -7.5829312030,
+      "holdout_net8_win_rate": 0.1705426357,
+      "holdout_net8_profit_factor": 0.1492765543,
+      "holdout_net8_daily_block_bootstrap_95ci_bps": [-7.7592830417, -7.4036269858]
+    },
+    "hist_gradient_boosting": {
+      "threshold": 0.65,
+      "train_auc": 0.6462853478,
+      "calibration_auc": 0.5186281984,
+      "holdout_auc": 0.5012732003,
+      "holdout_trades": 2329,
+      "holdout_gross_mean_bps": -0.6584265650,
+      "holdout_net8_mean_bps": -8.6584265650,
+      "holdout_net8_win_rate": 0.1790468012,
+      "holdout_net8_profit_factor": 0.1484581940,
+      "holdout_net8_daily_block_bootstrap_95ci_bps": [-9.1670367811, -8.0199020147]
+    }
+  },
+  "versions": {
+    "numpy": "2.5.3",
+    "scikit_learn": "1.9.1"
+  }
+}
