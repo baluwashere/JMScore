@@ -1,0 +1,38 @@
+name: Historical Backtest
+
+on:
+  push:
+    branches:
+      - feat/t4b-baseline-v0
+    paths:
+      - 'research/momentum_v0/**'
+      - '.github/workflows/historical-backtest.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  momentum-v0:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Run frozen baseline v0 on 2023-2025 BTCUSDT
+        run: python research/momentum_v0/backtest.py
+
+      - name: Upload research results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: momentum-v0-2023-2025
+          path: research/momentum_v0/results/
+          if-no-files-found: warn
+          retention-days: 30
