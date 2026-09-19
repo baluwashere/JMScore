@@ -31,3 +31,22 @@ jobs:
 
       - name: Collector unit tests
         run: npm --workspace @jmscore/collector run test
+
+  collector-live-smoke:
+    needs: test
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install
+        run: npm install --no-audit --no-fund
+
+      - name: Receive all BTC market feeds
+        run: npm --workspace @jmscore/collector run smoke
