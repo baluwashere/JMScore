@@ -35,15 +35,23 @@ Implementation note: Binance open interest remains an optional/degraded feed bec
 
 Acceptance: collector survives disconnects, exposes per-feed freshness, and receives live BTC aggregate trades, order-book depth, best bid/ask and mark/funding data.
 
-## T3 — Rolling market state
+## T3 — Rolling market state + historical replay
 
-- [ ] bounded trade buffers
-- [ ] rolling price windows
-- [ ] local order-book state
-- [ ] stale-data detection
-- [ ] deterministic clock handling
+- [x] bounded trade buffers
+- [x] local top-20 order-book state
+- [x] stale-data detection
+- [x] deterministic system/replay clock
+- [x] reject crossed/invalid/out-of-order state updates
+- [x] Binance Vision aggTrades parser
+- [x] Binance Vision bookTicker parser
+- [x] chronological multi-feed merge
+- [x] replay capability mask so unavailable historical features are never fabricated
+- [x] replay CLI for decompressed Binance Vision CSV files
+- [ ] validate latest T3 head with live collector smoke test
 
-Acceptance: feature engine never consumes stale or internally inconsistent state silently.
+Historical-data rule: exact historical L1/BBO and trade replay is supported. Binance Vision `bookDepth` is not treated as equivalent to live top-20 depth because the historical product is aggregated/sampled differently. L5/L20 features therefore require forward-collected data or a separate high-fidelity L2 source.
+
+Acceptance: live and historical events feed the same rolling state implementation; stale, malformed and unsupported data cannot silently enter the feature engine.
 
 ## T4 — Feature engine
 
@@ -53,9 +61,26 @@ Acceptance: feature engine never consumes stale or internally inconsistent state
 - [ ] spread and microprice delta
 - [ ] realized volatility 1m/5m/15m
 - [ ] optional OI/funding fields
+- [ ] explicit feature availability mask
 - [ ] unit tests for each feature
 
-Acceptance: features are deterministic from fixed fixtures.
+Acceptance: features are deterministic from fixed fixtures and unavailable historical inputs produce `unavailable`, never invented values.
+
+## T4B — Historical backtest gate
+
+This gate now happens before building more live persistence or adding Jev.
+
+- [ ] acquire official BTCUSDT USD-M aggTrades history (broad period, starting with 2023–2025)
+- [ ] acquire daily BTCUSDT bookTicker history for exact L1/BBO
+- [ ] checksum and continuity QA
+- [ ] normalize/sort historical archives before replay
+- [ ] generate feature snapshots without look-ahead
+- [ ] deterministic momentum baseline v0
+- [ ] label 30s/1m/5m/15m future returns and 5m MFE/MAE
+- [ ] chronological train/validation/test split
+- [ ] report performance by year/regime and data-coverage level
+
+Acceptance: before Jev is introduced, we can quantify whether the underlying momentum hypothesis has any historical signal and exactly which feature subsets are testable from public historical data.
 
 ## T5 — Snapshot sampler
 
@@ -76,13 +101,14 @@ Acceptance: Turso contains candidate and non-candidate control states without ra
 
 Acceptance: each eligible snapshot receives one immutable raw outcome record.
 
-## T7 — Naive momentum baseline
+## T7 — Forward naive momentum baseline
 
 - [ ] baseline signal generator
 - [ ] long/short/no-trade states
 - [ ] baseline metrics
+- [ ] compare forward results with T4B historical results
 
-Acceptance: baseline can be evaluated before Jev is introduced.
+Acceptance: live/forward baseline behavior is consistent enough with historical evaluation to justify adding Jev.
 
 ## T8 — Vercel AI Gateway + Jev
 
