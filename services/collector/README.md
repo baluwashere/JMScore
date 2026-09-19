@@ -18,12 +18,12 @@ No API key or trading credentials are used.
 
 Public WebSocket:
 
-- `btcusdt@aggTrade`
 - `btcusdt@depth20@100ms`
 - `btcusdt@bookTicker`
 
 Market WebSocket:
 
+- `btcusdt@aggTrade`
 - `btcusdt@markPrice@1s`
 
 REST poll, every 10 seconds by default:
@@ -31,6 +31,8 @@ REST poll, every 10 seconds by default:
 - current BTCUSDT open interest
 
 All exchange payloads are validated and normalized into internal JMScore event types before downstream use.
+
+Open interest is useful but non-core for T2. If the REST endpoint is unavailable from a deployment region, the collector reports it as stale/degraded while continuing to serve the WebSocket market state.
 
 ## Run
 
@@ -49,17 +51,26 @@ COLLECTOR_SYMBOL=ETHUSDT npm --workspace @jmscore/collector run start
 
 ## Smoke test
 
-The live smoke test requires all five normalized feeds to arrive within 30 seconds:
+The live smoke test requires the four core WebSocket feeds to arrive within 30 seconds:
+
+- aggregate trades
+- depth
+- best bid/ask
+- mark price/funding
+
+Open interest is reported separately as an optional feed.
 
 ```bash
 npm --workspace @jmscore/collector run smoke
 ```
 
-Expected success:
+Expected success shape:
 
 ```json
-{"ok":true,"received":"all_required_feeds"}
+{"ok":true,"received":"all_required_websocket_feeds","optional":{"openInterestReceived":false}}
 ```
+
+The optional value may be `true` on hosts where the Binance open-interest REST endpoint is accessible.
 
 ## Reliability behavior
 
@@ -69,6 +80,7 @@ Expected success:
 - data freshness is tracked independently for every feed
 - `st != 1` events are ignored when Binance supplies the merged UM/CM symbol-type field
 - open-interest requests have an 8 second timeout and cannot overlap
+- open-interest failure does not invalidate otherwise healthy core WebSocket state
 - graceful `SIGINT` / `SIGTERM` shutdown
 
 ## Persistence
