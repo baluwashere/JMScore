@@ -1,0 +1,55 @@
+import { BinanceUsdmAdapter } from './binance-usdm.js';
+import type { CollectorHealth, FeedName, MarketDataEvent } from './types.js';
+
+const required = new Set<MarketDataEvent['type']>([
+  'trade',
+  'book',
+  'book_ticker',
+  'mark_price',
+]);
+let openInterestReceived = false;
+
+const collector = new BinanceUsdmAdapter({ symbol: process.env.COLLECTOR_SYMBOL ?? 'BTCUSDT' });
+let lastHealth: CollectorHealth | null = null;
+
+collector.onHealth((health) => {
+  lastHealth = health;
+});
+
+const result = await new Promise<'ok' | 'timeout'>((resolve) => {
+  const timeout = setTimeout(() => resolve('timeout'), 30_000);
+
+  collector.onEvent((event) => {
+    if (event.type === 'open_interest') openInterestReceived = true;
+    required.delete(event.type);
+    if (required.size === 0) {
+      clearTimeout(timeout);
+      resolve('ok');
+    }
+  });
+
+  void collector.start();
+});
+
+await collector.stop();
+
+if (result === 'timeout') {
+  const missing = [...required] as FeedName[];
+  console.error(
+    JSON.stringify({
+      ok: false,
+      missing,
+      optional: { openInterestReceived },
+      health: lastHealth,
+    }),
+  );
+  process.exit(1);
+}
+
+console.log(
+  JSON.stringify({
+    ok: true,
+    received: 'all_required_websocket_feeds',
+    optional: { openInterestReceived },
+  }),
+);
