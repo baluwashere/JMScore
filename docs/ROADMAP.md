@@ -57,14 +57,19 @@ Acceptance: live and historical events feed the same rolling state implementatio
 
 ## T4 — Feature engine
 
-- [ ] returns 15s/30s/1m/3m/5m/15m
-- [ ] volume imbalance/z-score
-- [ ] L1/L5/L20 book imbalance
-- [ ] spread and microprice delta
-- [ ] realized volatility 1m/5m/15m
-- [ ] optional OI/funding fields
-- [ ] explicit feature availability mask
-- [ ] unit tests for each feature
+Status: complete as `features-v001`; deterministic unit tests and anti-look-ahead test pass in CI.
+
+- [x] returns 15s/30s/1m/3m/5m/15m
+- [x] 1m aggressor-volume imbalance and 1m volume z-score vs 20 prior buckets
+- [x] L1/L5/L20 book imbalance
+- [x] spread and microprice delta
+- [x] realized volatility 1m/5m/15m
+- [x] optional OI/funding fields
+- [x] explicit feature availability mask and unavailable reasons
+- [x] fixed deterministic fixtures and fail-closed tests
+- [x] explicit test that future trades cannot change current features
+
+Feature-version rule: any semantic or formula change must create a new version (`features-v002`, etc.) rather than silently altering historical experiments.
 
 Acceptance: features are deterministic from fixed fixtures and unavailable historical inputs produce `unavailable`, never invented values.
 
