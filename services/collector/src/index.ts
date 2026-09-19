@@ -1,8 +1,15 @@
 import { BinanceUsdmAdapter } from './binance-usdm.js';
+import { SystemMarketClock } from './state/clock.js';
+import { LIVE_MARKET_CAPABILITIES, RollingMarketState } from './state/rolling-market-state.js';
 import type { CollectorHealth, MarketDataEvent } from './types.js';
 
 const symbol = process.env.COLLECTOR_SYMBOL ?? 'BTCUSDT';
 const collector = new BinanceUsdmAdapter({ symbol });
+const state = new RollingMarketState({
+  symbol,
+  clock: new SystemMarketClock(),
+  capabilities: LIVE_MARKET_CAPABILITIES,
+});
 
 const counters: Record<MarketDataEvent['type'], number> = {
   trade: 0,
@@ -14,12 +21,24 @@ const counters: Record<MarketDataEvent['type'], number> = {
 
 collector.onEvent((event) => {
   counters[event.type] += 1;
+  const result = state.ingest(event);
+  if (!result.accepted) {
+    console.error(
+      JSON.stringify({
+        event: 'state_rejection',
+        type: event.type,
+        eventTime: event.eventTime,
+        reason: result.reason,
+      }),
+    );
+  }
 });
 
 collector.onHealth((health: CollectorHealth) => {
   const staleFeeds = Object.values(health.feeds)
     .filter((feed) => feed.stale)
     .map((feed) => feed.feed);
+  const snapshot = state.snapshot();
 
   console.log(
     JSON.stringify({
@@ -32,6 +51,13 @@ collector.onHealth((health: CollectorHealth) => {
       },
       staleFeeds,
       counters,
+      state: {
+        coreLiveReady: snapshot.coreLiveReady,
+        availableDataFresh: snapshot.availableDataFresh,
+        tradesInWindow: snapshot.trades.length,
+        rejectedEvents: snapshot.rejectedEvents,
+        lastRejection: snapshot.lastRejection,
+      },
       lastError: health.lastError,
     }),
   );
