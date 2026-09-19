@@ -5,8 +5,8 @@ on:
     branches:
       - feat/t4c-microstructure-ml-2023
     paths:
-      - 'research/microstructure_ml_2023/**'
-      - '.github/workflows/microstructure-ml-2023.yml'
+      - 'research/microstructure_ml_2023/run.py'
+      - 'research/microstructure_ml_2023/PROTOCOL.md'
   workflow_dispatch:
 
 permissions:
