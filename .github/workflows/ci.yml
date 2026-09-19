@@ -35,6 +35,9 @@ jobs:
       - name: Feature engine unit tests
         run: npm --workspace @jmscore/features run test
 
+      - name: Jev shadow unit tests
+        run: npm --workspace @jmscore/jev run test
+
   collector-live-smoke:
     needs: test
     runs-on: ubuntu-latest

@@ -165,3 +165,5 @@ export type Outcome = typeof outcomes.$inferSelect;
 export type NewOutcome = typeof outcomes.$inferInsert;
 export type StrategySignal = typeof strategySignals.$inferSelect;
 export type NewStrategySignal = typeof strategySignals.$inferInsert;
+
+export * from './t4d-schema.js';
