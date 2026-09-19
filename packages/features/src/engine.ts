@@ -128,8 +128,15 @@ export class FeatureEngine {
     const currentVolume = sumQuantity(tradesInWindow(trades, oneMinuteStart, snapshot.asOf));
     const mean = average(bucketVolumes);
     const std = standardDeviationPopulation(bucketVolumes, mean);
-    const zscore = std === 0 ? 0 : (currentVolume - mean) / std;
-    setFeature(values, availability, 'volume_zscore_1m', zscore);
+    if (std === 0) {
+      if (Math.abs(currentVolume - mean) < Number.EPSILON) {
+        setFeature(values, availability, 'volume_zscore_1m', 0);
+      } else {
+        markUnavailable(availability, reasons, 'volume_zscore_1m', 'zero historical volume variance');
+      }
+      return;
+    }
+    setFeature(values, availability, 'volume_zscore_1m', (currentVolume - mean) / std);
   }
 
   private computeBookFeatures(
