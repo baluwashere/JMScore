@@ -16,7 +16,7 @@ export function createDb(env: NodeJS.ProcessEnv = process.env) {
     authToken: config.TURSO_AUTH_TOKEN,
   });
 
-  return drizzle(client, { schema });
+  return drizzle({ client, schema });
 }
 
 export type Database = ReturnType<typeof createDb>;
