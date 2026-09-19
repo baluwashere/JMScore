@@ -8,11 +8,11 @@ test('buildBinanceUsdmUrls uses the 2026 routed Binance endpoints', () => {
 
   assert.equal(
     urls.publicUrl,
-    'wss://fstream.binance.com/public/stream?streams=btcusdt@aggTrade/btcusdt@depth20@100ms/btcusdt@bookTicker',
+    'wss://fstream.binance.com/public/stream?streams=btcusdt@depth20@100ms/btcusdt@bookTicker',
   );
   assert.equal(
     urls.marketUrl,
-    'wss://fstream.binance.com/market/stream?streams=btcusdt@markPrice@1s',
+    'wss://fstream.binance.com/market/stream?streams=btcusdt@aggTrade/btcusdt@markPrice@1s',
   );
   assert.equal(
     urls.openInterestUrl,
