@@ -6,7 +6,8 @@ on:
     branches:
       - feat/t4r-data-capability-audit
     paths:
-      - 'research/t4r_data_audit/**'
+      - 'research/t4r_data_audit/probe.py'
+      - 'research/t4r_data_audit/PROTOCOL.md'
       - '.github/workflows/t4r-data-audit.yml'
 
 jobs:
