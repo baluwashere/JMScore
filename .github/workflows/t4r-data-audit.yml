@@ -1,0 +1,31 @@
+name: T4R BTC Data Capability Audit
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - feat/t4r-data-capability-audit
+    paths:
+      - 'research/t4r_data_audit/probe.py'
+      - 'research/t4r_data_audit/PROTOCOL.md'
+      - '.github/workflows/t4r-data-audit.yml'
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Probe official BTC historical datasets
+        run: python research/t4r_data_audit/probe.py
+      - name: Show audit summary
+        run: cat research/t4r_data_audit/results/audit.md
+      - name: Upload audit artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: t4r-btc-data-capability-audit
+          path: research/t4r_data_audit/results/
+          retention-days: 30
