@@ -1,0 +1,47 @@
+name: T4R-2 True L2 Acquisition Audit
+
+on:
+  workflow_dispatch:
+    inputs:
+      day:
+        description: 'UTC date to probe (YYYY-MM-DD)'
+        required: true
+        default: '2023-09-15'
+  push:
+    branches:
+      - feat/t4r2-true-l2-acquisition-audit
+    paths:
+      - 'research/t4r2_l2_acquisition/**'
+      - '.github/workflows/t4r2-l2-acquisition.yml'
+
+jobs:
+  validate-probe:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Syntax-check signed probe
+        run: python -m py_compile research/t4r2_l2_acquisition/probe_binance_histdatalink.py
+
+  signed-binance-probe:
+    if: github.event_name == 'workflow_dispatch'
+    needs: validate-probe
+    runs-on: ubuntu-latest
+    env:
+      BINANCE_API_KEY: ${{ secrets.BINANCE_API_KEY }}
+      BINANCE_API_SECRET: ${{ secrets.BINANCE_API_SECRET }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Probe signed Binance histDataLink
+        run: python research/t4r2_l2_acquisition/probe_binance_histdatalink.py --day '${{ inputs.day }}'
+      - name: Upload sanitized result
+        uses: actions/upload-artifact@v4
+        with:
+          name: t4r2-binance-l2-probe
+          path: research/t4r2_l2_acquisition/results/binance_probe.json
+          retention-days: 30
